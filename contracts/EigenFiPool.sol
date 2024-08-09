@@ -15,7 +15,7 @@ import "./interface/IMigrator.sol";
 import "./interface/IEigenFiPool.sol";
 
 /// @title EigenFi Pool
-/// @notice A staking pool for liquid restaking token holders which rewards stakers with points from multiple platforms
+/// @notice A staking pool for liquid restaking tokens that rewards stakers with points across multiple platforms.
 contract EigenFiPool is IEigenFiPool, Ownable2Step, Pausable, EIP712, Nonces {
     using SafeERC20 for IERC20;
 
@@ -183,7 +183,7 @@ contract EigenFiPool is IEigenFiPool, Ownable2Step, Pausable, EIP712, Nonces {
         if (migratorBlocklist[_migratorContract]) revert MigratorBlocked();
     }
 
-    function _migrate(
+    function _migrate(  
         address _user, 
         address _destination, 
         address _migratorContract,
