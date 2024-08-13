@@ -1,7 +1,7 @@
 /**
 * @type import('hardhat/config').HardhatUserConfig
 */
-
+require("@nomicfoundation/hardhat-ignition-ethers");
 require('dotenv').config();
 require("@nomicfoundation/hardhat-toolbox");
 require("hardhat-abi-exporter");
