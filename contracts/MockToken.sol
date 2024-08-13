@@ -1,6 +1,9 @@
 //SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.24;
 
+/// @title Mock Token
+/// @notice A mock ERC20 token used for testing the EigenFi contract's staking and withdrawal functionalities.
+
 contract MockToken {
     string public name = "Mock Token";
     string public symbol = "MTK";

@@ -1,23 +1,32 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.24;
 
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "./interface/IEigenFiPool.sol";
+import "./interface/IMigrator.sol";
+import "./interface/IWETH.sol";
+
+import {SignatureChecker} from "@openzeppelin/contracts/utils/cryptography/SignatureChecker.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {SignatureChecker} from "@openzeppelin/contracts/utils/cryptography/SignatureChecker.sol";
-import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Nonces} from "@openzeppelin/contracts/utils/Nonces.sol";
-
-import "./interface/IWETH.sol";
-import "./interface/IMigrator.sol";
-import "./interface/IEigenFiPool.sol";
 
 /// @title EigenFi Pool
 /// @notice A staking pool for liquid restaking tokens that rewards stakers with points across multiple platforms.
-contract EigenFiPool is IEigenFiPool, Ownable2Step, Pausable, EIP712, Nonces {
+contract EigenFiPool is IEigenFiPool, Ownable2Step, EIP712, Pausable, Nonces {
     using SafeERC20 for IERC20;
+
+    // Required signer
+    address public helixSigner;
+
+    // WETH Address
+    address immutable WETH_ADDRESS;
+
+    // Next eventId to emit
+    uint256 private eventId; 
 
     bytes32 private constant MIGRATE_TYPEHASH =
         keccak256("Migrate(address user,address migratorContract,address destination,address[] tokens,uint256 signatureExpiry,uint256 nonce)");
@@ -31,16 +40,7 @@ contract EigenFiPool is IEigenFiPool, Ownable2Step, Pausable, EIP712, Nonces {
     // (migratorContract => isBlocklisted)
     mapping(address => bool) public migratorBlocklist;
 
-    // Next eventId to emit
-    uint256 private eventId; 
-
-    // Required signer for the migration message
-    address public helixSigner;
-
-    // ETH's special address
-    address immutable WETH_ADDRESS;
-
-    constructor(address _signer, address[] memory _tokensAllowed, address _weth) Ownable(msg.sender) EIP712("EigenFiPool", "1"){
+    constructor(address _signer, address[] memory _tokensAllowed, address _weth) Ownable(msg.sender) EIP712("EigenFiPool", "1") {
         if (_signer == address(0)) revert SignerCannotBeZeroAddress();
         if (_weth == address(0)) revert WETHCannotBeZeroAddress();
 
@@ -53,10 +53,6 @@ contract EigenFiPool is IEigenFiPool, Ownable2Step, Pausable, EIP712, Nonces {
             tokenAllowlist[_tokensAllowed[i]] = true;
         }
     }
-
-    /*//////////////////////////////////////////////////////////////
-                            Staker Functions
-    //////////////////////////////////////////////////////////////*/
     
     /**
      * @inheritdoc IEigenFiPool
