@@ -29,6 +29,9 @@ module.exports = {
     // Obtain one at https://etherscan.io/
     apiKey: ETHERSCAN_API_KEY
   },
+  sourcify: {
+    enabled: true,
+  },
   abiExporter: {
     path: "./app/abi",
     runOnCompile: true,
