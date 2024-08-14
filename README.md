@@ -1,4 +1,4 @@
-# EigenFiPool 
+# EigenFiPool
 
 ### Setup
 
@@ -22,7 +22,7 @@ The contract is initialized with the following set of parameters:
 
 4. npx hardhat compile
 
-5. npx hardhat ignition deploy ignition/modules/EigenFiPoolModule.js --network ethereum_sepolia --verify
+5. npx hardhat ignition deploy ignition/modules/EigenFiPoolModule.js --network ethereum_sepolia
 
 ## License
 

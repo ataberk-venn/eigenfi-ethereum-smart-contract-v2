@@ -1,8 +1,8 @@
 /**
-* @type import('hardhat/config').HardhatUserConfig
-*/
+ * @type import('hardhat/config').HardhatUserConfig
+ */
 require("@nomicfoundation/hardhat-ignition-ethers");
-require('dotenv').config();
+require("dotenv").config();
 require("@nomicfoundation/hardhat-toolbox");
 require("hardhat-abi-exporter");
 
@@ -27,7 +27,7 @@ module.exports = {
   etherscan: {
     // Your API key for Etherscan
     // Obtain one at https://etherscan.io/
-    apiKey: ETHERSCAN_API_KEY
+    apiKey: ETHERSCAN_API_KEY,
   },
   sourcify: {
     enabled: true,
