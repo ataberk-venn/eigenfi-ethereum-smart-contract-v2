@@ -24,6 +24,8 @@ The contract is initialized with the following set of parameters:
 
 5. npx hardhat ignition deploy ignition/modules/EigenFiPoolModule.js --network ethereum_sepolia
 
+6. npm run enable-firewall sepolia 11155111
+
 ## License
 
 Created under the UNLICENSED
