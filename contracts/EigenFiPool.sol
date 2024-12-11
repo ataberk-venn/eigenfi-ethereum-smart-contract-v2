@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.24;
 
+import {VennFirewallConsumer} from "@ironblocks/firewall-consumer/contracts/consumers/VennFirewallConsumer.sol";
 import "./interface/IEigenFiPool.sol";
 import "./interface/IMigrator.sol";
 import "./interface/IWETH.sol";
@@ -16,7 +17,7 @@ import {Nonces} from "@openzeppelin/contracts/utils/Nonces.sol";
 
 /// @title EigenFi Pool
 /// @notice A staking pool for liquid restaking tokens that rewards stakers with points across multiple platforms.
-contract EigenFiPool is IEigenFiPool, Ownable2Step, EIP712, Pausable, Nonces {
+contract EigenFiPool is VennFirewallConsumer, IEigenFiPool, Ownable2Step, EIP712, Pausable, Nonces {
     using SafeERC20 for IERC20;
 
     // Required signer
@@ -26,11 +27,12 @@ contract EigenFiPool is IEigenFiPool, Ownable2Step, EIP712, Pausable, Nonces {
     address immutable WETH_ADDRESS;
 
     // Next eventId to emit
-    uint256 private eventId; 
+    uint256 private eventId;
 
-    bytes32 private constant MIGRATE_TYPEHASH =
-        keccak256("Migrate(address user,address migratorContract,address destination,address[] tokens,uint256 signatureExpiry,uint256 nonce)");
-    
+    bytes32 private constant MIGRATE_TYPEHASH = keccak256(
+        "Migrate(address user,address migratorContract,address destination,address[] tokens,uint256 signatureExpiry,uint256 nonce)"
+    );
+
     // (tokenAddress => isAllowedForStaking)
     mapping(address => bool) public tokenAllowlist;
 
@@ -40,7 +42,10 @@ contract EigenFiPool is IEigenFiPool, Ownable2Step, EIP712, Pausable, Nonces {
     // (migratorContract => isBlocklisted)
     mapping(address => bool) public migratorBlocklist;
 
-    constructor(address _signer, address[] memory _tokensAllowed, address _weth) Ownable(msg.sender) EIP712("EigenFiPool", "1") {
+    constructor(address _signer, address[] memory _tokensAllowed, address _weth)
+        Ownable(msg.sender)
+        EIP712("EigenFiPool", "1")
+    {
         if (_signer == address(0)) revert SignerCannotBeZeroAddress();
         if (_weth == address(0)) revert WETHCannotBeZeroAddress();
 
@@ -48,42 +53,42 @@ contract EigenFiPool is IEigenFiPool, Ownable2Step, EIP712, Pausable, Nonces {
 
         helixSigner = _signer;
         uint256 length = _tokensAllowed.length;
-        for(uint256 i; i < length; ++i){
+        for (uint256 i; i < length; ++i) {
             if (_tokensAllowed[i] == address(0)) revert TokenCannotBeZeroAddress();
             tokenAllowlist[_tokensAllowed[i]] = true;
         }
     }
-    
+
     /**
      * @inheritdoc IEigenFiPool
      */
-    function depositFor(address _token, address _for, uint256 _amount) whenNotPaused external {
+    function depositFor(address _token, address _for, uint256 _amount) external whenNotPaused firewallProtected {
         if (_amount == 0) revert DepositAmountCannotBeZero();
-        if (_for== address(0)) revert CannotDepositForZeroAddress();
+        if (_for == address(0)) revert CannotDepositForZeroAddress();
         if (!tokenAllowlist[_token]) revert TokenNotAllowedForStaking();
 
         balance[_token][_for] += _amount;
 
         emit Deposit(++eventId, _for, _token, _amount);
 
-        IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);   
+        IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
     }
 
-    function depositETHFor(address _for) whenNotPaused payable external {
+    function depositETHFor(address _for) external payable whenNotPaused firewallProtected {
         if (msg.value == 0) revert DepositAmountCannotBeZero();
-        if (_for== address(0)) revert CannotDepositForZeroAddress();
+        if (_for == address(0)) revert CannotDepositForZeroAddress();
         if (!tokenAllowlist[WETH_ADDRESS]) revert TokenNotAllowedForStaking();
 
         balance[WETH_ADDRESS][_for] += msg.value;
         emit Deposit(++eventId, _for, WETH_ADDRESS, msg.value);
 
-        IWETH(WETH_ADDRESS).deposit{value:msg.value}();
+        IWETH(WETH_ADDRESS).deposit{value: msg.value}();
     }
 
     /**
      * @inheritdoc IEigenFiPool
      */
-    function withdraw(address _token, uint256 _amount) external {
+    function withdraw(address _token, uint256 _amount) external firewallProtected {
         if (_amount == 0) revert WithdrawAmountCannotBeZero();
 
         balance[_token][msg.sender] -= _amount; //Will underfow if the staker has insufficient balance
@@ -97,116 +102,111 @@ contract EigenFiPool is IEigenFiPool, Ownable2Step, EIP712, Pausable, Nonces {
      */
     function migrateWithSig(
         address _user,
-        address[] calldata _tokens, 
-        address _migratorContract, 
-        address _destination, 
-        uint256 _signatureExpiry, 
+        address[] calldata _tokens,
+        address _migratorContract,
+        address _destination,
+        uint256 _signatureExpiry,
         bytes memory _stakerSignature
-    ) onlyOwner external{
+    ) external onlyOwner firewallProtected {
         {
-            bytes32 structHash = keccak256(abi.encode(
-                MIGRATE_TYPEHASH, 
-                _user, 
-                _migratorContract,
-                _destination, 
-                //The array values are encoded as the keccak256 hash of the concatenated encodeData of their contents 
-                //Ref: https://eips.ethereum.org/EIPS/eip-712#definition-of-encodedata
-                keccak256(abi.encodePacked(_tokens)),
-                _signatureExpiry, 
-                _useNonce(_user)
-            ));
+            bytes32 structHash = keccak256(
+                abi.encode(
+                    MIGRATE_TYPEHASH,
+                    _user,
+                    _migratorContract,
+                    _destination,
+                    //The array values are encoded as the keccak256 hash of the concatenated encodeData of their contents
+                    //Ref: https://eips.ethereum.org/EIPS/eip-712#definition-of-encodedata
+                    keccak256(abi.encodePacked(_tokens)),
+                    _signatureExpiry,
+                    _useNonce(_user)
+                )
+            );
             bytes32 constructedHash = _hashTypedDataV4(structHash);
 
-            if (!SignatureChecker.isValidSignatureNow(_user, constructedHash, _stakerSignature)){
+            if (!SignatureChecker.isValidSignatureNow(_user, constructedHash, _stakerSignature)) {
                 revert SignatureInvalid();
             }
         }
 
         uint256[] memory _amounts = _migrateChecks(_user, _tokens, _signatureExpiry, _migratorContract);
         _migrate(_user, _destination, _migratorContract, _tokens, _amounts);
-
     }
 
     /**
      * @inheritdoc IEigenFiPool
      */
     function migrate(
-        address[] calldata  _tokens, 
-        address _migratorContract, 
-        address _destination, 
-        uint256 _signatureExpiry, 
+        address[] calldata _tokens,
+        address _migratorContract,
+        address _destination,
+        uint256 _signatureExpiry,
         bytes calldata _authorizationSignatureFromHelix
-    ) external { 
+    ) external firewallProtected {
         uint256[] memory _amounts = _migrateChecks(msg.sender, _tokens, _signatureExpiry, _migratorContract);
 
         bytes32 constructedHash = keccak256(
-                abi.encodePacked(
-                    '\x19Ethereum Signed Message:\n32',
-                    keccak256(
-                        abi.encodePacked(
-                            _migratorContract,
-                            _signatureExpiry,
-                            address(this),
-                            block.chainid
-                        )
-                    )
-                )
-            );
+            abi.encodePacked(
+                "\x19Ethereum Signed Message:\n32",
+                keccak256(abi.encodePacked(_migratorContract, _signatureExpiry, address(this), block.chainid))
+            )
+        );
 
         // verify that the migrator’s address is signed in the authorization signature by the correct signer (helixSigner)
-        if (!SignatureChecker.isValidSignatureNow(helixSigner, constructedHash, _authorizationSignatureFromHelix)){
+        if (!SignatureChecker.isValidSignatureNow(helixSigner, constructedHash, _authorizationSignatureFromHelix)) {
             revert SignatureInvalid();
         }
-        
+
         _migrate(msg.sender, _destination, _migratorContract, _tokens, _amounts);
     }
 
-    function _migrateChecks(address _user, address[] calldata  _tokens, uint256 _signatureExpiry, address _migratorContract) 
-        internal view returns (uint256[] memory _amounts){
-        
+    function _migrateChecks(
+        address _user,
+        address[] calldata _tokens,
+        uint256 _signatureExpiry,
+        address _migratorContract
+    ) internal view returns (uint256[] memory _amounts) {
         uint256 length = _tokens.length;
         if (length == 0) revert TokenArrayCannotBeEmpty();
 
         _amounts = new uint256[](length);
 
-        for(uint256 i; i < length; ++i){
+        for (uint256 i; i < length; ++i) {
             _amounts[i] = balance[_tokens[i]][_user];
             if (_amounts[i] == 0) revert UserDoesNotHaveStake();
         }
 
-        if (block.timestamp >= _signatureExpiry) revert SignatureExpired();// allows us to invalidate signature by having it expired
+        if (block.timestamp >= _signatureExpiry) revert SignatureExpired(); // allows us to invalidate signature by having it expired
 
         if (migratorBlocklist[_migratorContract]) revert MigratorBlocked();
     }
 
-    function _migrate(  
-        address _user, 
-        address _destination, 
+    function _migrate(
+        address _user,
+        address _destination,
         address _migratorContract,
-        address[] calldata  _tokens, 
-        uint256[] memory _amounts) 
-        internal {
-        
+        address[] calldata _tokens,
+        uint256[] memory _amounts
+    ) internal {
         uint256 length = _tokens.length;
-       //effects for-loop (state changes)
-        for(uint256 i; i < length; ++i){
+        //effects for-loop (state changes)
+        for (uint256 i; i < length; ++i) {
             //if the balance has been already set to zero, then _tokens[i] is a duplicate of a previous token in the array
             if (balance[_tokens[i]][_user] == 0) revert DuplicateToken();
 
             balance[_tokens[i]][_user] = 0;
         }
 
-        emit Migrate (++eventId, _user, _tokens, _destination, _migratorContract, _amounts);
+        emit Migrate(++eventId, _user, _tokens, _destination, _migratorContract, _amounts);
 
         //interactions for-loop (external calls)
-        for(uint256 i; i < length; ++i){
+        for (uint256 i; i < length; ++i) {
             IERC20(_tokens[i]).approve(_migratorContract, _amounts[i]);
         }
-       
-        IMigrator(_migratorContract).migrate(_user, _tokens, _destination, _amounts);
 
+        IMigrator(_migratorContract).migrate(_user, _tokens, _destination, _amounts);
     }
-    
+
     /*//////////////////////////////////////////////////////////////
                             Admin Functions
     //////////////////////////////////////////////////////////////*/
@@ -254,11 +254,11 @@ contract EigenFiPool is IEigenFiPool, Ownable2Step, EIP712, Pausable, Nonces {
     /**
      * @inheritdoc IEigenFiPool
      */
-    function unpause() external onlyOwner whenPaused{
+    function unpause() external onlyOwner whenPaused {
         _unpause();
     }
 
-    function renounceOwnership() public override{
+    function renounceOwnership() public override {
         revert CannotRenounceOwnership();
-    }   
+    }
 }

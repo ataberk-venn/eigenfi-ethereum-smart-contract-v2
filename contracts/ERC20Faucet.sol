@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import {VennFirewallConsumer} from "@ironblocks/firewall-consumer/contracts/consumers/VennFirewallConsumer.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-contract ERC20Faucet {
+contract ERC20Faucet is VennFirewallConsumer {
     IERC20 public token;
     address public owner;
     uint256 public dailyAllowance;
@@ -18,16 +19,13 @@ contract ERC20Faucet {
         _;
     }
 
-    constructor(
-        address _token,
-        uint256 _dailyAllowance
-    ) {
+    constructor(address _token, uint256 _dailyAllowance) {
         token = IERC20(_token);
         owner = msg.sender;
         dailyAllowance = _dailyAllowance;
     }
 
-    function claimTokens() external {
+    function claimTokens() external firewallProtected {
         require(block.timestamp - lastClaimed[msg.sender] >= 1 days, "Can only claim once per day");
 
         require(token.transfer(msg.sender, dailyAllowance), "Token transfer failed");
