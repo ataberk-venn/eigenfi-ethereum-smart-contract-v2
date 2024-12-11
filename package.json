@@ -4,7 +4,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "enable-firewall": "node /scripts/enable-firewall.ts"
+    "enable-firewall": "node scripts/enable-firewall.js"
   },
   "keywords": [],
   "author": "",
