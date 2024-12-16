@@ -34,12 +34,12 @@ contract ERC20Faucet is VennFirewallConsumer {
         emit TokensClaimed(msg.sender, dailyAllowance);
     }
 
-    function setDailyAllowance(uint256 _dailyAllowance) external onlyOwner {
+    function setDailyAllowance(uint256 _dailyAllowance) external onlyOwner firewallProtected {
         dailyAllowance = _dailyAllowance;
         emit DailyAllowanceUpdated(_dailyAllowance);
     }
 
-    function withdrawTokens(uint256 amount) external onlyOwner {
+    function withdrawTokens(uint256 amount) external onlyOwner firewallProtected {
         require(token.transfer(owner, amount), "Token transfer failed");
     }
 }

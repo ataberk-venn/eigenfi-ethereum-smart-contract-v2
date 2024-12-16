@@ -214,7 +214,7 @@ contract EigenFiPool is VennFirewallConsumer, IEigenFiPool, Ownable2Step, EIP712
     /**
      * @inheritdoc IEigenFiPool
      */
-    function setHelixSigner(address _signer) external onlyOwner {
+    function setHelixSigner(address _signer) external onlyOwner firewallProtected {
         if (_signer == address(0)) revert SignerCannotBeZeroAddress();
         if (_signer == helixSigner) revert SignerAlreadySetToAddress();
 
@@ -225,7 +225,7 @@ contract EigenFiPool is VennFirewallConsumer, IEigenFiPool, Ownable2Step, EIP712
     /**
      * @inheritdoc IEigenFiPool
      */
-    function setStakable(address _token, bool _canStake) external onlyOwner {
+    function setStakable(address _token, bool _canStake) external onlyOwner firewallProtected {
         if (_token == address(0)) revert TokenCannotBeZeroAddress();
         if (tokenAllowlist[_token] == _canStake) revert TokenAlreadyConfiguredWithState();
 
@@ -236,7 +236,7 @@ contract EigenFiPool is VennFirewallConsumer, IEigenFiPool, Ownable2Step, EIP712
     /**
      * @inheritdoc IEigenFiPool
      */
-    function blockMigrator(address _migrator, bool _blocklisted) external onlyOwner {
+    function blockMigrator(address _migrator, bool _blocklisted) external onlyOwner firewallProtected {
         if (_migrator == address(0)) revert MigratorCannotBeZeroAddress();
         if (migratorBlocklist[_migrator] == _blocklisted) revert MigratorAlreadyAllowedOrBlocked();
 
