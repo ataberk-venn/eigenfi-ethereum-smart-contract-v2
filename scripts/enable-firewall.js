@@ -47,6 +47,9 @@ try {
 
   for (const [key, address] of Object.entries(deployedAddresses)) {
     const contractName = key.split("#")[1] || key;
+    if (contractName == "StakedETH" || contractName == "MockToken") {
+      continue;
+    }
     builder.addContract(contractName, address);
   }
 
