@@ -6,6 +6,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "enable-firewall": "node scripts/enable-firewall.js"
     "deploy": "node scripts/deploy.js",
+    "live-test": "node scripts/firewallOnchainTest.js"
   },
   "keywords": [],
   "author": "",
@@ -19,7 +20,9 @@
   "dependencies": {
     "@ironblocks/firewall-consumer": "^1.0.17",
     "@openzeppelin/contracts": "^5.0.2",
+    "@vennbuild/venn-dapp-sdk": "^0.8.5",
     "dotenv": "^16.4.5",
+    "ethers": "^6.13.4",
     "hardhat-abi-exporter": "^2.10.1"
   }
 }
