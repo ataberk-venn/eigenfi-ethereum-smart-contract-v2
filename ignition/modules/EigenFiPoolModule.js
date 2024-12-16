@@ -1,10 +1,19 @@
 const { buildModule } = require("@nomicfoundation/hardhat-ignition/modules");
 
-const _signer = "0x3989BCC4a9A4E356265AcC658fB10Dfb3a86ddd7";
-const _weth = "0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9";
-const _tokensAllowed = ["0xF47763Ae4b3C4A04345C65229e99344be107301b"];
-
 module.exports = buildModule("EigenFiPoolModule", (m) => {
+  const _signer = m.getParameter(
+    "signer",
+    "0x9A997cdd63535c64F2f265524aa744204C3015C0"
+  );
+  const _weth = m.getParameter(
+    "weth",
+    "0x6B5817E7091BC0C747741E96820b0199388245EA"
+  );
+  const _tokensAllowed = m.getParameter("tokensAllowed", [
+    "0xE88bD33434BEA79f767F03a927EC9eE02D7Ea2ef",
+    _weth,
+  ]);
+
   const eigenFiPool = m.contract("EigenFiPool", [
     _signer,
     _tokensAllowed,

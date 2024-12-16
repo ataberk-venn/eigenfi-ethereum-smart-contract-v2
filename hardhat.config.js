@@ -24,11 +24,25 @@ module.exports = {
       url: API_URL,
       accounts: [PRIVATE_KEY],
     },
+    ethereum_holesky: {
+      url: API_URL,
+      accounts: [PRIVATE_KEY],
+    },
   },
   etherscan: {
     // Your API key for Etherscan
     // Obtain one at https://etherscan.io/
     apiKey: ETHERSCAN_API_KEY,
+    customChains: [
+      {
+        network: "holesky",
+        chainId: 17000,
+        urls: {
+          apiURL: "https://api-holesky.etherscan.io/api",
+          browserURL: "https://holesky.etherscan.io",
+        },
+      },
+    ],
   },
   sourcify: {
     enabled: true,
