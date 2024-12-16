@@ -4,7 +4,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "enable-firewall": "node scripts/enable-firewall.js"
+    "enable-firewall": "node scripts/enable-firewall.js",
     "deploy": "node scripts/deploy.js",
     "live-test": "node scripts/firewallOnchainTest.js"
   },
